@@ -1,35 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import axios from 'axios';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [stage, setStage] = useState<'send' | 'verify'>('send');
+  const [msg, setMsg] = useState('');
+
+  const sendOtpHandler = async () => {
+    try {
+      const res = await axios.post('http://localhost:5000/send-otp', { email });
+      setMsg('OTP sent successfully!');
+      setStage('verify');
+    } catch (err: any) {
+      setMsg(err.response?.data?.error || 'Failed to send OTP');
+    }
+  };
+
+  const verifyOtpHandler = async () => {
+    try {
+      const res = await axios.post('http://localhost:5000/verify-otp', { email, otp });
+      if (res.data.verified) {
+        setMsg('OTP verified successfully!');
+      } else {
+        setMsg('Incorrect OTP!');
+      }
+    } catch (err: any) {
+      setMsg(err.response?.data?.error || 'Verification failed');
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ padding: 40 }}>
+      <h2>OneTime OTP Demo</h2>
+      <input
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        disabled={stage === 'verify'}
+      /><br /><br />
+      {stage === 'verify' && (
+        <>
+          <input
+            placeholder="Enter OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          /><br /><br />
+        </>
+      )}
+      <button onClick={stage === 'send' ? sendOtpHandler : verifyOtpHandler}>
+        {stage === 'send' ? 'Send OTP' : 'Verify OTP'}
+      </button>
+      <p>{msg}</p>
+    </div>
+  );
 }
 
-export default App
+export default App;
